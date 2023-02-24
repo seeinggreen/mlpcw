@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+movie_ids_02_24_2023.json
+api_key.txt

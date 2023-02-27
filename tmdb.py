@@ -122,7 +122,7 @@ class Tmdb:
         batch_size = total_films % BATCH_SIZE
         self.fetch_and_store(batches,batch_size)
             
-    def check_stored_films(self):
+    def check_stored_films(self,store=False):
         """
         Checks the data fetched from TMDb and stores the basic info in JSON files by year.
 
@@ -143,17 +143,19 @@ class Tmdb:
                     if released and film['release_date']:
                         title = film['title']
                         year = film['release_date'][:4]
+                        genres = [g['name'] for g in film['genres']]
                         #Store the title and the JSON file with the full details
-                        info = {'title':title, 'file':jf}
+                        info = {'title':title, 'plot': film['overview'],'genres':genres,'file':jf}
                         #Add a new dictionary if needed
                         if year not in self.stored_films:
                             self.stored_films[year] = {}
                         #Store the films in dictionaries by year
                         self.stored_films[year][film['id']] = info
-        #Write the dictionaries to disk
-        for year in self.stored_films:
-            with open(f'year_jsons/{year}.json','w') as f:
-                json.dump(self.stored_films[year],f)
+        if store:
+            #Write the dictionaries to disk
+            for year in self.stored_films:
+                with open(f'year_jsons/{year}.json','w') as f:
+                    json.dump(self.stored_films[year],f)
     
     def fetch_and_store(self,i,batch_size):
         """

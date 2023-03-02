@@ -1,11 +1,10 @@
 import random
 from tmdb import Tmdb
 from wiki import Wiki
-import concurrent.futures
 
 if __name__ == '__main__':
 
-    tmdb = Tmdb()#Tmdb object for TMDb API calls
+    tmdb = Tmdb(load_ids=True)#Tmdb object for TMDb API calls
     wiki = Wiki()#Wiki object for Wikipedia API calls
         
     #Get some random films for demo purposes

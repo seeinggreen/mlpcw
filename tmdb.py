@@ -1,5 +1,6 @@
 from tmdbv3api import TMDb
 from tmdbv3api import Movie
+from tmdbv3api import Find
 import json
 from collections import Counter
 import time
@@ -70,6 +71,7 @@ class Tmdb:
         #Create a TMDb and Movie object
         self.tmdb = TMDb()
         self.movie = Movie()
+        self.find = Find()
         
         #Read the API key from file and add it to the TMDb object
         with open(API_KEY_FILE) as f:
@@ -80,6 +82,13 @@ class Tmdb:
         if load_ids:
             with open(MOVIE_IDS_FILE,encoding='utf8') as f:
                 self.all_films = [json.loads(film) for film in f.readlines()]
+            
+    def get_tmdb_id_from_imdb_id(self,imdb_id):
+        results = self.find.find_by_imdb_id(imdb_id)
+        if results.movie_results:
+            return results.movie_results[0].id
+        else:
+            return None
             
     def get_genres(self,film):
         """
@@ -132,10 +141,10 @@ class Tmdb:
 
         """
         #Get all the JSON files for the film batches
-        json_files = os.listdir('tmdb_jsons')
+        json_files = os.listdir('tmdb_full_jsons')
         self.stored_films = {}
         for jf in tqdm(json_files):
-            with open(os.path.join('tmdb_jsons',jf)) as f:
+            with open(os.path.join('tmdb_full_jsons',jf)) as f:
                 films = json.load(f)
                 for film in films:
                     released = film['status'] == 'Released'
@@ -154,7 +163,7 @@ class Tmdb:
         if store:
             #Write the dictionaries to disk
             for year in self.stored_films:
-                with open(f'year_jsons/{year}.json','w') as f:
+                with open(f'tmdb_jsons/{year}.json','w') as f:
                     json.dump(self.stored_films[year],f)
     
     def fetch_and_store(self,i,batch_size):
@@ -176,7 +185,7 @@ class Tmdb:
         start = datetime.now()
         print(f'Fetching films {i*batch_size}-{(i+1)*batch_size-1}')
         films = self.fetch_n_films(batch_size,batch_size*i)
-        with open(f'tmdb_jsons/{i}.json','w') as f:
+        with open(f'tmdb_full_jsons/{i}.json','w') as f:
             json.dump([film._json for film in films],f)
         end = datetime.now()
         print(f'Stored films {i*batch_size}-{(i+1)*batch_size-1} in {str(end-start)[2:-4]}')

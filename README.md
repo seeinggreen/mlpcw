@@ -1,6 +1,13 @@
 # mlpcw
 
-Run demo.py to see a new random output or see example_output.txt for a sample.
+Files are commented with Numpydoc for reference.
+
+To access the dataset, import the Dataset class and create a new dataset object with the 'load_data' argument set to True:
+```
+from dataset import Dataset
+ds = Dataset(load_data=True)
+```
+Data can then be access from the `all_data` field in the dataset object.
 
 ## Files Required But Not Included
 The following files should all be placed in the top level of the project (they will be ignored by git):

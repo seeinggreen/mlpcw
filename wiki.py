@@ -70,6 +70,7 @@ class Wiki:
                     if len(films) == len(raw_films):
                         pbar.update(len(pages))
                         continue
+                    pbar.update(len(titles))
                     for page in pages:
                         #Titles are preloaded, so no API call is required if the page gets skipped
                         title = page.title

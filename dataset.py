@@ -121,41 +121,54 @@ class Dataset:
 
         """
         #Get the Wikipedia data
-        wiki_data = {}
+        
+        self.imdb_only_by_year = {}
+        self.no_id_by_year = {}
+        
+        self.wiki_data = {}
         for file in os.listdir('wiki_jsons'):
             with open(os.path.join('wiki_jsons',file)) as f:
-                year = json.load(f)
-                for page in year:
-                    wiki_data[page] = year[page]
-        
+                data = json.load(f)
+            for page in data:
+                self.wiki_data[page] = data[page]
+            year = file[:4]
+            self.imdb_only_by_year[year] = [page for page in data if 'imdb_id' in data[page]]
+            self.no_id_by_year[year] = [page for page in data if 'tmdb_id' not in data[page] and 'imdb_id' not in data[page]]
+                    
         #Get the TMDb data
-        tmdb_data = {}
+        self.tmdb_data = {}
+        self.tmdb_data_by_year = {}
         for file in os.listdir('tmdb_jsons'):
             with open(os.path.join('tmdb_jsons',file)) as f:
-                year = json.load(f)
-                for film in year:
-                    year[film]['year'] = file[:4] #Preserve the TMDb release year for later access
-                    tmdb_data[film] = year[film]
+                data = json.load(f)
+            self.tmdb_data_by_year[year] = data
+            year = file[:4]
+            for film in data:
+                data[film]['year'] = year #Preserve the TMDb release year for later access
+                self.tmdb_data[film] = data[film]
         
         #Filter to just the Wikipedia pages that have valid TMDb IDs attached
-        tm_wiki_films = [page_id for page_id in wiki_data if 'tmdb_id' in wiki_data[page_id]]
-        
+        tm_wiki_films = [page_id for page_id in self.wiki_data if 'tmdb_id' in self.wiki_data[page_id]]
+  
         self.data_by_year = {}
-        missing = [] #Keep track of missing TMDb entries
+        self.missing_tmdb_pages = [] #Keep track of missing TMDb entries
+        self.missing_genres_by_year = {}
         for wiki_id in tm_wiki_films:
-            tmdb_id = str(wiki_data[wiki_id]['tmdb_id'])
-            if tmdb_id not in tmdb_data:
-                missing.append(tmdb_id)
+            tmdb_id = str(self.wiki_data[wiki_id]['tmdb_id'])
+            if tmdb_id not in self.tmdb_data:
+                self.missing_tmdb_pages.append(tmdb_id)
                 continue
-            tmdb = tmdb_data[tmdb_id]
+            tmdb = self.tmdb_data[tmdb_id]
             title = tmdb['title']
             year = tmdb['year']
             genres = tmdb['genres']
             #Reject entries with no genres stored in TMDb
             if not genres:
-                continue
+                if year not in self.missing_genres_by_year:
+                    self.missing_genres_by_year[year] = []
+                self.missing_genres_by_year[year].append(tmdb_id)
             tmdb_plot = tmdb['plot']
-            wiki_plot = wiki_data[wiki_id]['plot']
+            wiki_plot = self.wiki_data[wiki_id]['plot']
             if year not in self.data_by_year:
                 self.data_by_year[year] = []
             self.data_by_year[year].append({'title':title,
@@ -164,4 +177,17 @@ class Dataset:
                          'tmdb_plot':tmdb_plot,
                          'tmdb_id':tmdb_id,
                          'wiki_id':wiki_id})
-        
+            
+    def attempt_matches(self):
+        self.matches_by_year = {}
+        for year in self.no_id_by_year:
+            self.matches_by_year[year] = []
+            tmdb_films = {}
+            for tmdb_id in self.tmdb_data_by_year[year]:
+                title = self.tmdb_data_by_year[year][tmdb_id]['title']
+                tmdb_films[title.lower()] = tmdb_id
+            for wiki_id in self.no_id_by_year[year]:
+                wiki_title = self.wiki_data[wiki_id]['title']
+                wiki_title = wiki_title.split(" (")[0].lower()
+                if wiki_title in tmdb_films:
+                    self.matches_by_year[year].append((wiki_id,tmdb_films[wiki_title]))

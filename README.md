@@ -18,3 +18,7 @@ The following files should all be placed in the top level of the project (they w
 ## Required Packages
 - tmdbv3api (clone as above or run 'pip install tmdbv3api')
 - wikipedia-api (run 'pip install wikipedia-api' or 'conda install -c conda-forge wikipedia-api')
+
+## Training and Evaluating the model
+To train the classification model, run the following command:
+python classification.py --model [bert, roberta] --plot_type [wiki, tmdb]

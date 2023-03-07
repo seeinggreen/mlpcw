@@ -3,13 +3,31 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
 import pyarrow as pa
-from datasets import Dataset
+from datasets import Dataset, load_metric
 from dataset import Dataset as dt
 from transformers import AutoModelForSequenceClassification
 import argparse
 from sklearn.preprocessing import MultiLabelBinarizer
+import numpy as np
+
 
 BATCH_SIZE = 16
+LEARNING_RATE = 2e-5
+EPOCHS = 3
+NUM_LABELS = 19
+
+
+def compute_metrics(eval_pred):
+    metric1 = load_metric("precision")
+    metric2 = load_metric("recall")
+    metric3 = load_metric("f1")
+    predictions, labels = eval_pred
+    predictions = np.argmax(predictions, axis=1)
+    precision = metric1.compute(predictions=predictions, references=labels)['precision']
+    recall = metric2.compute(predictions=predictions, references=labels)['recall']
+    f1 = metric3.compute(predictions=predictions, references=labels)['f1']
+    return {"precision": precision, "recall": recall, "f1": f1}
+
 
 def load_data():
     ds = dt(load_data=True)
@@ -55,14 +73,14 @@ if __name__ == "__main__":
         tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
         model = AutoModelForSequenceClassification.from_pretrained(
         'bert-base-uncased',
-        num_labels = 19,
+        num_labels = NUM_LABELS,
         problem_type = "multi_label_classification"
         )
     elif args.model == 'roberta':
         tokenizer = AutoTokenizer.from_pretrained('roberta-base')
         model = AutoModelForSequenceClassification.from_pretrained(
         'roberta-base',
-        num_labels=19,
+        num_labels=NUM_LABELS,
         problem_type = "multi_label_classification"
         )
 
@@ -96,6 +114,8 @@ if __name__ == "__main__":
         evaluation_strategy="epoch",
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
+        learning_rate=LEARNING_RATE,
+        num_train_epochs=EPOCHS,
         )
 
     trainer = Trainer(
@@ -103,7 +123,8 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=train_hg,
         eval_dataset=valid_hg,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
     )
 
     trainer.train()

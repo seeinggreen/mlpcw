@@ -1,5 +1,7 @@
 import json
 import os
+import matplotlib.pyplot as plt
+import numpy as np
     
 class Dataset:
     
@@ -191,3 +193,32 @@ class Dataset:
                 wiki_title = wiki_title.split(" (")[0].lower()
                 if wiki_title in tmdb_films:
                     self.matches_by_year[year].append((wiki_id,tmdb_films[wiki_title]))
+                    
+    def stacked_genre_chart(self):
+        all_genres = set()
+        for f in self.all_data:
+            for g in f['genres']:
+                all_genres.add(g)
+        all_genres = list(all_genres)
+        
+        years = []
+        genres_per_year = [[] for g in all_genres]
+        for year in self.data_by_year:
+            years.append(int(year))
+            genres = {}
+            for g in all_genres:
+                genres[g] = 0
+            for f in self.data_by_year[year]:
+                for g in f['genres']:
+                    genres[g] += 1 / len(f['genres'])
+            for i,g in enumerate(all_genres):
+                genres_per_year[i].append(genres[g])
+        
+        cmap = plt.cm.tab20b
+        cs = cmap(np.linspace(0,1,len(all_genres)))
+        plt.stackplot(years,*genres_per_year,labels=all_genres,colors=cs)
+        plt.legend(loc='upper left',ncol=2,fontsize='small')
+        plt.xlabel('Year')
+        plt.ylabel('Films')
+        plt.savefig('stacked_genre.pdf')
+        

@@ -67,7 +67,7 @@ class Wiki:
                             films[film] = raw_films[film]
                             titles.append(films[film]['title'])
                     #If there were no errors, update the progress bar and move on
-                    if len(films) == len(raw_films):
+                    if str(year) in done and len(films) == len(raw_films):
                         pbar.update(len(pages))
                         continue
                     pbar.update(len(titles))
@@ -91,14 +91,17 @@ class Wiki:
                                         films[page_id]['imdb_id'] = imdb_id
                         except(KeyboardInterrupt):
                             return
-                        except:
+                        except(Exception) as err:
                             films[page_id] = {'title':title,'error':True}
                             self.errors[year].append(page_id)
-                            print(f'Error with page #{page_id} ({title}) in {year}')
+                            print(f'Error with page #{page_id} ({title}) in {year} - {err}')
                         pbar.update(1)
                     if films: #Don't create empty JSON files
+                        print(f'Storing pages for {year}')
                         with open(f'wiki_jsons/{year}.json','w') as file:
                             json.dump(films,file)
+                    else:
+                        print(f'No films for {year}')
                 except(Exception) as err:
                     print(f'Error with {year}: {err}')
         

@@ -26,6 +26,10 @@ def genre_stats(df):
     return genre_count
 
 
+def token_histogram(df):
+    
+
+
 def plot_genre_frequency(genre_dict):
     
     df_data = {'genre': [], 'frequency': []}

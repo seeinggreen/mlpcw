@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     processed_data = []
 
-    for i in range(1000):
+    for i in range:
         processed_data.append(process_data(df.iloc[i], plot_type))
 
     new_df = pd.DataFrame(processed_data)

@@ -11,6 +11,8 @@ from sklearn.metrics import f1_score, hamming_loss, classification_report
 import numpy as np
 
 
+import os
+
 BATCH_SIZE = 16
 LEARNING_RATE = 2e-5
 EPOCHS = 3
@@ -72,6 +74,9 @@ def compute_metrics(eval_pred):
 
 
 if __name__ == "__main__":
+    
+    os.environ["CUDA_VISIBLE_DEVICES"]='0'
+    
     parser = argparse.ArgumentParser(description="Predict movie genres using plots.")
     parser.add_argument("--model", help="Select encoder model (BERT, RoBERTa, xlnet)", choices=["bert", "roberta", "xlnet"], default="bert")
     parser.add_argument("--plot_type", help="Select the plot you wish to do classification on", choices=['wiki', 'tmdb'])

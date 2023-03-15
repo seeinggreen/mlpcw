@@ -2,17 +2,17 @@
 
 Files are commented with Numpydoc for reference.
 
-To access the full dataset, import the Dataset class and create a new dataset object with ```load_data=True```. To load the balanced dataset, set ```load_balanced=True``` and access either ```all_data``` or ```balanced``` respecitively:
+To access the full dataset, import the Dataset class and create a new dataset object with ```load_data=True```. To load the balanced dataset, set ```balanced=True``` and use ```get_data()``` to select whichever dataset is loaded:
 ```
 from dataset import Dataset
 
 ds = Dataset(load_data=True)
-films = ds.all_data
+full_dataset = ds.get_data()
 
 #OR
 
-ds = Dataset(load_balanced=True)
-films = ds.balanced
+ds = Dataset(balanced=True,load_data=True)
+balanced_dataset = ds.get_data()
 ```
 ## Files Required But Not Included
 The following files should all be placed in the top level of the project (they will be ignored by git):

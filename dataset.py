@@ -6,16 +6,16 @@ import random
     
 class Dataset:
     
-    def __init__(self,load_balanced=False,load_data=False,exclude_ids=True):
+    def __init__(self,balanced=False,load_data=False,exclude_ids=True):
         """
         Initalises a Dataset object
 
         Parameters
         ----------
-        load_balanced : bool, optional
-            Loads the balanced dataset into self.balanced. The default is False.
+        balanced : bool, optional
+            Whether to use the balanced dataset (rather than the full dataset). The default is False.
         load_data : bool, optional
-            Loads the full dataset into self.data_by_year and self.all_data. The default is False.
+            Loads the selected dataset into memory The default is False.
         exclude_ids : bool, optional
             Removes the document IDs from the full dataset. The default is True.
 
@@ -24,29 +24,26 @@ class Dataset:
         None.
 
         """
+        self.balanced = balanced
         if load_data:
             self.load_dataset(exclude_ids)
-        if load_balanced:
-            self.load_dataset(balanced=True)
             
-    def print_stats(self,balanced=False):
+    def get_data(self):
+        if self.balanced:
+            return self.balanced_data
+        else:
+            return self.all_data
+            
+    def print_stats(self):
         """
         Calculates and prints some basic stats about the dataset loaded in memory.
         
-        Parameters
-        ----------
-        balanced : bool, optional
-            Prints stats for the balanced dataset if True, the full dataset if False. The default is False.
-
         Returns
         -------
         None.
 
         """
-        if balanced:
-            dataset = self.balanced
-        else:
-            dataset = self.all_data
+        dataset = self.get_data()
         
         total_entries = len(dataset)
         wiki_plot_word_lengths = [len(film['wiki_plot'].split(' ')) for film in dataset]
@@ -73,7 +70,7 @@ class Dataset:
         print(f'Ratios between 5-7: {ratio7} ({ratio7/total_entries*100:.2f}% of entries)')
         print(f'Ratios greater than 7: {longer} ({longer/total_entries*100:.2f}% of entries)')
         
-    def load_dataset(self,balanced=False,exclude_ids=True):
+    def load_dataset(self,exclude_ids=True):
         """
         Loads either the full dataset from file and stores it in a
         dictionary (data_by_year) and a list (all_data) OR loads the balanced
@@ -81,9 +78,6 @@ class Dataset:
         
         Parameters
         ----------
-        balanced : bool, optional
-            Loads the balanced dataset if True, otherwise the full dataset. The default is False.
-        
         exclude_ids : bool, optional
             If True, all_data will exclude the TMDb/Wikipedia IDs. The default is True.
 
@@ -92,7 +86,7 @@ class Dataset:
         None.
 
         """
-        if not balanced:
+        if not self.balanced:
             self.data_by_year = {}
             self.all_data = []
             for file in os.listdir('dataset_jsons'):
@@ -102,52 +96,41 @@ class Dataset:
                 self.all_data.extend(self.data_by_year[year])
         else:
             with open('balanced_dataset.json') as f:
-                self.balanced = json.load(f)
+                self.balanced_data = json.load(f)
           
         #Optionally remove the IDs from each film entry
-        if exclude_ids and not balanced:
+        if exclude_ids and not self.balanced:
             for film in self.all_data:
                 film.pop('tmdb_id',None)
                 film.pop('wiki_id',None)
     
-    def build_and_store_datset(self,balanced=False):
+    def build_and_store_datset(self):
         """
         Rebuilds the stored dataset and stores it to file.
-        
-        Parameters
-        ----------
-        balanced : bool, optional
-            Stores the balanced dataset if True, otherwise the full dataset. The default is False.
-
 
         Returns
         -------
         None.
 
         """
-        if balanced:
+        if self.balanced:
             self.get_balanced_dataset()
         else:
             self.build_dataset()
-        self.store_dataset(balanced)
+        self.store_dataset()
     
-    def store_dataset(self,balanced=False):
+    def store_dataset(self):
         """
         Stores the full dataset held in memory to file.
-
-        Parameters
-        ----------
-        balanced : bool, optional
-            Stores the balanced dataset if True, otherwise the full dataset. The default is False.
-
+        
         Returns
         -------
         None.
 
         """
-        if balanced:
+        if self.balanced:
             with open('balanced_dataset.json','w') as file:
-                json.dump(self.balanced,file)
+                json.dump(self.balanced_data,file)
         else:
             for year in self.data_by_year:
                 with open(f'dataset_jsons/{year}.json','w') as file:
@@ -253,7 +236,7 @@ class Dataset:
 
         """
         all_genres = set()
-        for f in self.all_data:
+        for f in self.get_data():
             for g in f['genres']:
                 all_genres.add(g)
         all_genres = list(all_genres)
@@ -291,7 +274,7 @@ class Dataset:
         plt.legend(loc='upper left',ncol=2,fontsize='small')
         plt.xlabel('Year')
         plt.ylabel('Films')
-        plt.savefig('stacked_genre.pdf')
+        plt.savefig('figures/stacked_genre.pdf')
         
     def total_by_genre(self,genres=None,fractional=True):
         """
@@ -316,7 +299,7 @@ class Dataset:
         for g in genres:
             tbg[g] = 0
             
-        for f in self.all_data:
+        for f in self.get_data():
             for g in f['genres']:
                 if g not in genres:
                     continue
@@ -350,7 +333,7 @@ class Dataset:
                     continue
                 gbg[g][gg] = 0
                 
-        for f in self.all_data:
+        for f in self.get_data():
             for g in f['genres']:
                 other_genres = [genre for genre in f['genres'] if genre != g]
                 for og in other_genres:
@@ -399,7 +382,38 @@ class Dataset:
             for g in f['genres']:
                 fgc[g] += 1 / len(f['genres'])
         return fgc
+    
+    def genre_count_bar_chart(self):
+        tbg = self.total_by_genre(fractional=False)
+        ftbg = self.total_by_genre(fractional=True)
+        tbg = [tbg[g] for g in tbg]
+        ftbg = [ftbg[g] for g in ftbg]
         
+        fig, ax = plt.subplots()
+        x = np.arange(len(tbg))
+        bar_width = 0.4
+        
+        cmap = plt.cm.tab20b
+        cs = cmap(np.linspace(0,1,19))
+        
+        if self.balanced:
+            cs = np.take(cs,[0,3,4,6,10,13,16],0)
+        
+        ax.bar(x-(bar_width / 2),tbg,width=bar_width,color=cs,edgecolor='black')
+        ax.bar(x+(bar_width / 2),ftbg,width=bar_width,color=cs,edgecolor='black')
+        
+        if self.balanced:
+            ax.xaxis.set_ticks(x,self.all_genres())
+        else:
+            ax.xaxis.set_ticks(x,self.all_genres(),rotation=45,ha='right',rotation_mode='anchor')
+        
+        plt.xlabel('Genre')
+        plt.ylabel('Films')
+        if self.balanced:
+            plt.savefig('figures/balanced_genre_bar.pdf')
+        else:
+            plt.subplots_adjust(bottom=0.3)
+            plt.savefig('figures/genre_bar.pdf')
     
     def get_balanced_dataset(self):
         """
@@ -447,7 +461,7 @@ class Dataset:
                 if g in full_genres:
                     break
                 
-        self.balanced = subset
+        self.balanced_data = subset
                 
             
         

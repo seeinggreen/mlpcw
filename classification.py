@@ -16,7 +16,6 @@ import os
 BATCH_SIZE = 16
 LEARNING_RATE = 2e-5
 EPOCHS = 3
-NUM_LABELS = 19
 
 
 class CustomCallBack(TrainerCallback):
@@ -24,9 +23,9 @@ class CustomCallBack(TrainerCallback):
         print(f"Epoch {state.epoch}: ")
 
 
-def load_data():
-    ds = dt(load_data=True)
-    dict_data = ds.all_data 
+def load_data(balanced):
+    ds = dt(balanced=balanced,load_data=True)
+    dict_data = ds.get_data()
     df = pd.DataFrame(dict_data)
     return df
 
@@ -81,8 +80,16 @@ if __name__ == "__main__":
     parser.add_argument("--model", help="Select encoder model (BERT, RoBERTa, xlnet)", choices=["bert", "roberta", "xlnet"], default="bert")
     parser.add_argument("--plot_type", help="Select the plot you wish to do classification on", choices=['wiki', 'tmdb'])
     parser.add_argument("--file_name", help="Choose an excel file name ending with .pkl")
-    
+    parser.add_argument("--balanced", action='store_true', help="Whether to use the balanced dataset.")
+  
     args = parser.parse_args()
+    
+    if args.balanced:
+        balanced = True
+        NUM_LABELS = 7
+    else:
+        balanced = False
+        NUM_LABELS = 19
 
     if args.model == 'bert':
         tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
@@ -111,13 +118,13 @@ if __name__ == "__main__":
     
     elif args.plot_type == 'tmdb':
         plot_type = 'tmdb_plot'
-
-    df = load_data()
+        
+    df = load_data(balanced)
     df = labeling(df)
 
     processed_data = []
 
-    for i in range:
+    for i in range(len(df)):
         processed_data.append(process_data(df.iloc[i], plot_type))
 
     new_df = pd.DataFrame(processed_data)

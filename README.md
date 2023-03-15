@@ -2,13 +2,18 @@
 
 Files are commented with Numpydoc for reference.
 
-To access the dataset, import the Dataset class and create a new dataset object with the 'load_data' argument set to True:
+To access the full dataset, import the Dataset class and create a new dataset object with ```load_data=True```. To load the balanced dataset, set ```load_balanced=True``` and access either ```all_data``` or ```balanced``` respecitively:
 ```
 from dataset import Dataset
-ds = Dataset(load_data=True)
-```
-Data can then be access from the `all_data` field in the dataset object.
 
+ds = Dataset(load_data=True)
+films = ds.all_data
+
+#OR
+
+ds = Dataset(load_balanced=True)
+films = ds.balanced
+```
 ## Files Required But Not Included
 The following files should all be placed in the top level of the project (they will be ignored by git):
 - api_key.txt (the TMDb API key)

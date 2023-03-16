@@ -7,7 +7,7 @@ from dataset import Dataset as dt
 from transformers import AutoModelForSequenceClassification
 import argparse
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.metrics import f1_score, hamming_loss, classification_report
+from sklearn.metrics import f1_score, hamming_loss, classification_report, multilabel_confusion_matrix
 import numpy as np
 
 
@@ -40,13 +40,13 @@ def labeling(df):
     return df
 
 
-def process_data(row, plot):
+def process_data(row, plot, max_length):
 
     text = row[plot]
     text = str(text)
     text = ' '.join(text.split())
 
-    encodings = tokenizer(text, padding="max_length", truncation=True, max_length=256)
+    encodings = tokenizer(text, padding="max_length", truncation=True, max_length=max_length)
 
 
 
@@ -66,10 +66,11 @@ def compute_metrics(eval_pred):
     f1_macro = f1_score(labels, predictions, average='macro')
     f1_micro = f1_score(labels, predictions, average='micro')
     hamming = hamming_loss(labels, predictions)
+    confusion_matrix = multilabel_confusion_matrix(labels, predictions)
 
     print(classification_report(labels, predictions, zero_division=0))
 
-    return {"f1_macro": f1_macro, "f1_micro": f1_micro, "hamming_loss": hamming}
+    return {"f1_macro": f1_macro, "f1_micro": f1_micro, "hamming_loss": hamming, "confusion_matrix": confusion_matrix.tolist()}
 
 
 if __name__ == "__main__":
@@ -81,9 +82,14 @@ if __name__ == "__main__":
     parser.add_argument("--plot_type", help="Select the plot you wish to do classification on", choices=['wiki', 'tmdb'])
     parser.add_argument("--file_name", help="Choose an excel file name ending with .pkl")
     parser.add_argument("--balanced", action='store_true', help="Whether to use the balanced dataset.")
+    parser.add_argument("--freeze", action="store_true", help="Whether to make to freeze the encoders")
+    parser.add_argument("--max_length", help="Maximum sequence length (choose 400 for wiki and 60 for tmdb)")
+
   
     args = parser.parse_args()
     
+    MAX_LENGTH = int(args.max_length)
+
     if args.balanced:
         balanced = True
         NUM_LABELS = 7
@@ -98,6 +104,10 @@ if __name__ == "__main__":
         num_labels = NUM_LABELS,
         problem_type = "multi_label_classification"
         )
+        if args.freeze:
+            for param in model.bert.parameters():
+                param.requires_grad = False
+
     elif args.model == 'roberta':
         tokenizer = AutoTokenizer.from_pretrained('roberta-base')
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -105,6 +115,10 @@ if __name__ == "__main__":
         num_labels=NUM_LABELS,
         problem_type = "multi_label_classification"
         )
+        if args.freeze:
+            for param in model.roberta.parameters():
+                param.requires_grad = False
+
     elif args.model == 'xlnet':
         tokenizer = AutoTokenizer.from_pretrained('xlnet-base-cased')
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -112,6 +126,12 @@ if __name__ == "__main__":
         num_labels=NUM_LABELS,
         problem_type = "multi_label_classification"
         )
+        if args.freeze:
+            for param in model.transformer.parameters():
+                param.requires_grad = False
+
+        for name, param in model.named_parameters():
+            print(name, param.requires_grad)
 
     if args.plot_type == 'wiki':
         plot_type = 'wiki_plot'
@@ -125,7 +145,7 @@ if __name__ == "__main__":
     processed_data = []
 
     for i in range(len(df)):
-        processed_data.append(process_data(df.iloc[i], plot_type))
+        processed_data.append(process_data(df.iloc[i], plot_type, MAX_LENGTH))
 
     new_df = pd.DataFrame(processed_data)
 
@@ -169,4 +189,5 @@ if __name__ == "__main__":
 
     model_results = trainer.evaluate()
 
-    write_results(model_results, args.file_name, args.model, args.plot_type)
+    write_results(model_results, args.file_name, args.model, args.plot_type, args.freeze, args.max_length)
+    write_confusion_matrix(args.file_name, model_results['eval_confusion_matrix'])

@@ -24,9 +24,6 @@ def genre_stats(df):
                 genre_count[genre] = 1
 
     return genre_count
-
-
-def token_histogram(df):
     
 
 

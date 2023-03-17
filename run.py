@@ -1,83 +1,23 @@
+from classification import Classification
+from tqdm import tqdm
 import os
 
-experiments = [
-    {
-        "model": "xlnet",
-        "plot_type": "wiki",
-        "freeze": True,
-        "max_length": 400
-    },
-    {
-        "model": "xlnet",
-        "plot_type": "wiki",
-        "freeze": False,
-        "max_length": 400
-    },
-    {
-        "model": "xlnet",
-        "plot_type": "tmdb",
-        "freeze": True,
-        "max_length": 60
-    },
-    {
-        "model": "xlnet",
-        "plot_type": "tmdb",
-        "freeze": False,
-        "max_length": 60
-    },
-    {
-        "model": "bert",
-        "plot_type": "wiki",
-        "freeze": True,
-        "max_length": 400
-    },
-    {
-        "model": "bert",
-        "plot_type": "wiki",
-        "freeze": False,
-        "max_length": 400
-    },
-    {
-        "model": "bert",
-        "plot_type": "tmdb",
-        "freeze": True,
-        "max_length": 60
-    },
-    {
-        "model": "bert",
-        "plot_type": "tmdb",
-        "freeze": False,
-        "max_length": 60
-    },
-    {
-        "model": "roberta",
-        "plot_type": "wiki",
-        "freeze": True,
-        "max_length": 400
-    },
-    {
-        "model": "roberta",
-        "plot_type": "wiki",
-        "freeze": False,
-        "max_length": 400
-    },
-    {
-        "model": "roberta",
-        "plot_type": "tmdb",
-        "freeze": True,
-        "max_length": 60
-    },
-    {
-        "model": "roberta",
-        "plot_type": "tmdb",
-        "freeze": False,
-        "max_length": 60
-    }
-]
 
-for exp in experiments:
-    os.system(f'python classification.py \
-              --model {exp["model"]} --plot_type {exp["plot_type"]} \
-              --file_name {exp["model"]}_{exp["plot_type"]}_results_{exp["max_length"]}{"_freeze" if exp["freeze"] else ""}.pkl \
-              --balanced --max_length {exp["max_length"]} \
-              {"--freeze" if exp["freeze"] else ""}')
+if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"]='0'
+    with tqdm(initial=0,total=12) as pbar:
+        #12 experiements varying:
+            #model {bert, roberta, xlnet}
+            #plot_type {wiki, tmdb}
+            #frozen {true, false}
+        for model in ['bert','roberta','xlnet']:
+            for is_wiki in [True,False]:
+                plot_type = 'wiki' if is_wiki else 'tmdb'
+                max_length = 400 if is_wiki else 60
+                for freeze in [True,False]:
+                    print(f'####### Running {model} with {plot_type}{" (frozen)" if freeze else ""} #######')
+                    file_name = f'{model}_{plot_type}_results_{max_length}{"_freeze" if freeze else ""}.pkl'
+                    classification = Classification(model,plot_type,file_name,True,freeze,max_length)
+                    classification.run()
+                    pbar.update(1)
+        

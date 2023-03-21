@@ -19,17 +19,17 @@ class CustomCallBack(TrainerCallback):
         
 def compute_metrics(eval_pred):
     """
-    
+    Defines metrics for the model to compute the scores.
 
     Parameters
     ----------
-    eval_pred : TYPE
-        DESCRIPTION.
+    eval_pred : tuple
+        Contains the output of the SequenceClassification of the model, and the true values
 
     Returns
     -------
     dict
-        DESCRIPTION.
+        F1 Macro, F1 Micro, and the Hamming Loss.
 
     """
     predictions, labels = eval_pred
@@ -80,21 +80,21 @@ class Classification:
     
     def process_data(self,row, plot, max_length):
         """
-        
+        Processes and tokenize the data to prepare it for the model.
 
         Parameters
         ----------
-        row : TYPE
-            DESCRIPTION.
-        plot : TYPE
-            DESCRIPTION.
-        max_length : TYPE
-            DESCRIPTION.
+        row : dataframe
+            A row of the dataframe passed to the function.
+        plot : str
+            The plot source to use for the data. The source is either from wikipedia or TMDB
+        max_length : int
+            The maximum length of the input sequence to pass to the encoder.
 
         Returns
         -------
-        encodings : TYPE
-            DESCRIPTION.
+        encodings : dictionary
+            A dictionary containing the original text, labels and the input encodings returned by the tokenizer.
 
         """
         text = row[plot]
@@ -222,7 +222,7 @@ class Classification:
     
     def __init__(self,model_type,plot_type,file_name,balanced,freeze,max_length):
         """
-        Initialises a Classification object.
+        Initialises an encoder along with the classifier.
 
         Parameters
         ----------
@@ -235,9 +235,9 @@ class Classification:
         balanced : bool
             Whether to use the balanced dataset or the full dataset.
         freeze : bool
-            DESCRIPTION.
+            Whether to freeze the encoder weights during training.
         max_length : int
-            DESCRIPTION.
+            The maximum lenght of the input sequence.
 
         Returns
         -------

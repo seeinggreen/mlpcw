@@ -1,7 +1,20 @@
 from dataset import Dataset as dt
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from os import listdir
+from os.path import isfile, join
 
+
+def get_all_results(path):
+    onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
+    df_list = []
+    for file in onlyfiles:
+        df = pd.read_pickle(path + file)
+        df_list.append(df)
+    final_df = pd.concat(df_list)
+
+    return final_df
 
 def load_data():
 
@@ -26,6 +39,36 @@ def genre_stats(df):
     return genre_count
     
 
+def plot_scores(df, freeze_stat, plot_source):
+
+    df = df.loc[(df['Freeze?'] == freeze_stat) & (df['Plot Source'] == plot_source)]
+    df['F1 Micro'] = round(df['F1 Micro']*100, 2)
+    df['F1 Macro'] = round(df['F1 Macro']*100, 2)
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df['Model Name'],
+        y= df['F1 Micro'],
+        width=0.2,
+        name='F1 Micro',
+        marker_color='#0a2342'
+    ))
+    fig.add_trace(go.Bar(
+        x=df['Model Name'],
+        y=df['F1 Macro'],
+        width=0.2,
+        name='F1 Macro',
+        marker_color='#2ca58d'
+    ))
+
+    fig.update_layout(barmode='group', 
+                      xaxis_tickangle=-45, 
+                      font=dict(size=18), 
+                      width=700, height=550)
+    
+    fig.update_yaxes(tickfont_family="Arial Black")
+    fig.update_xaxes(tickfont_family="Arial Black")
+    fig.show()
 
 def plot_genre_frequency(genre_dict):
     
@@ -43,8 +86,8 @@ def plot_genre_frequency(genre_dict):
 
 if __name__ == "__main__":
 
-    df = load_data()
-    all_genres = genre_stats(df)
-    plot_genre_frequency(all_genres)
+   df = get_all_results('result_pkls/')
+
+#    plot_scores(df, True, plot_source='wiki_plot')
 
     

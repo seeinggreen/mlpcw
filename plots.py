@@ -8,17 +8,17 @@ from os.path import isfile, join
 
 def get_all_results(path):
     """
-    
+    Loads experiments' results from pickled files located in the directory located at `path`.
 
     Parameters
     ----------
-    path : TYPE
-        DESCRIPTION.
+    path : String
+        Path to the directory containing result files.
 
     Returns
     -------
-    final_df : TYPE
-        DESCRIPTION.
+    final_df : pandas.Dataframe
+        Dataframe containing all results.
 
     """
     onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
@@ -32,12 +32,12 @@ def get_all_results(path):
 
 def load_data():
     """
-    
+    Load the movie plots and genre dataset in a pandas Dataframe using our custom Dataset class.
 
     Returns
     -------
-    df : TYPE
-        DESCRIPTION.
+    df : pandas.Dataframe
+        The full dataset.
 
     """
 
@@ -49,17 +49,17 @@ def load_data():
 
 def genre_stats(df):
     """
-    
+    Count number of occurences for each genre and returns it in a dictionnary.
 
     Parameters
     ----------
-    df : TYPE
-        DESCRIPTION.
+    df : pd.Dataframe
+        The full movie plots and genre dataset.
 
     Returns
     -------
-    genre_count : TYPE
-        DESCRIPTION.
+    genre_count : Dict
+        A dictionnary of (k, v) pairs where k are each genre and v the number of occurences in the dataset.
 
     """
 
@@ -78,16 +78,18 @@ def genre_stats(df):
 
 def plot_scores(df, freeze_stat, plot_source):
     """
-    
+    Create bar plots of models' results for a given plot source and a given type of training (pre-trained or fine-tuned).
 
     Parameters
     ----------
-    df : TYPE
-        DESCRIPTION.
-    freeze_stat : TYPE
-        DESCRIPTION.
-    plot_source : TYPE
-        DESCRIPTION.
+    df : pandas.Dataframe
+        The results dataset for all our experiments.
+    freeze_stat : Boolean
+        True for plotting results of the models with frozen weights.
+        False for plotting results of the fine-tuned models.
+    plot_source : String
+        'wiki_plot' for models evaluated on the Wikipedia plots.
+        'tmdb_plot' for models evaluated on the TMDb plots.
 
     Returns
     -------
@@ -126,12 +128,12 @@ def plot_scores(df, freeze_stat, plot_source):
 
 def plot_genre_frequency(genre_dict):
     """
-    
+    Create a bar plot of the frequency of each genre in the dataset.
 
     Parameters
     ----------
-    genre_dict : TYPE
-        DESCRIPTION.
+    genre_dict : Dict
+        Dictionnary of (k, v) pairs where k are genres and v are occurences of each genre in the dataset.
 
     Returns
     -------

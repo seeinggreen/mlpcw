@@ -2,6 +2,22 @@ import pandas as pd
 import os
 
 def write_confusion_matrix(file_name, conf_matrix):
+    """
+    
+
+    Parameters
+    ----------
+    file_name : TYPE
+        DESCRIPTION.
+    conf_matrix : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    dict : TYPE
+        DESCRIPTION.
+
+    """
     
     file_path = './confusion_pkls/' + file_name
 
@@ -27,6 +43,29 @@ def write_confusion_matrix(file_name, conf_matrix):
     return dict
 
 def write_results(scores, file_name, model_name, plot_type, freeze, max_length):
+    """
+    
+
+    Parameters
+    ----------
+    scores : TYPE
+        DESCRIPTION.
+    file_name : TYPE
+        DESCRIPTION.
+    model_name : TYPE
+        DESCRIPTION.
+    plot_type : TYPE
+        DESCRIPTION.
+    freeze : TYPE
+        DESCRIPTION.
+    max_length : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
 
     file_path = './result_pkls/' + file_name
 

@@ -10,7 +10,7 @@ import os
 from tqdm import tqdm
 
 API_KEY_FILE ='api_key.txt' #Where the TMDb API key is stored
-MOVIE_IDS_FILE = 'movie_ids_02_24_2023.json' #Where the TMDb movie IDs are stored
+MOVIE_IDS_FILE = 'data/movie_ids_02_24_2023.json' #Where the TMDb movie IDs are stored
 
 BATCH_SIZE = 1000 #Size of batch for each worker thread to fetch
 WORKERS = 10 #Number of threads to use in the worker pool
@@ -84,6 +84,20 @@ class Tmdb:
                 self.all_films = [json.loads(film) for film in f.readlines()]
             
     def get_tmdb_id_from_imdb_id(self,imdb_id):
+        """
+        Gets a TMDb ID from the given IMDb ID if it exists.
+
+        Parameters
+        ----------
+        imdb_id : str
+            The IMDb ID to check against.
+
+        Returns
+        -------
+        str or None
+            The TMDb if it has been found, otherwise None.
+
+        """
         results = self.find.find_by_imdb_id(imdb_id)
         if results.movie_results:
             return results.movie_results[0].id

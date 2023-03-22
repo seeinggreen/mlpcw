@@ -10,6 +10,8 @@ PAGE = wikipediaapi.Namespace.MAIN
 CATEGORY = wikipediaapi.Namespace.CATEGORY
 URL = 'https://en.wikipedia.org/w/api.php'
 IMDB_REGEX = '^https?://www.imdb.com/title/(tt\d{7}\d*)/?$'
+MAIN_DATA_DIR = 'data'
+WIKI_DIR = os.path.join(MAIN_DATA_DIR,'wiki_jsons')
 
 
 class Wiki:
@@ -44,7 +46,7 @@ class Wiki:
         #The total number of Wikipedia pages to process
         total = sum([len(self.wiki_pages[year]['pages']) for year in self.wiki_pages])
         #A list of years that are already (partially) processed
-        done = [f[:4] for f in os.listdir('wiki_jsons')]
+        done = [f[:4] for f in os.listdir(WIKI_DIR)]
         #Keep track of pages that didn't complete sucessfully
         self.errors = {}
 
@@ -53,7 +55,7 @@ class Wiki:
                 #If the year has been processed, get the pages already on file
                 raw_films = {}
                 if str(year) in done:
-                    with open(f'wiki_jsons/{year}.json') as f:
+                    with open(os.path.join(WIKI_DIR,f'{year}.json')) as f:
                         raw_films = json.load(f)
                 print(f'Fetching year {i+1} of {len(self.wiki_pages)} ({year}) - {pbar.n}/{pbar.total}:')
                 self.errors[year]=[]
@@ -98,7 +100,7 @@ class Wiki:
                         pbar.update(1)
                     if films: #Don't create empty JSON files
                         print(f'Storing pages for {year}')
-                        with open(f'wiki_jsons/{year}.json','w') as file:
+                        with open(os.path.join(WIKI_DIR,f'{year}.json'),'w') as file:
                             json.dump(films,file)
                     else:
                         print(f'No films for {year}')

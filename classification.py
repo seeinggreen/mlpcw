@@ -65,8 +65,9 @@ class Classification:
     
     def labeling(self):
         """
+        Uses sklearn's MultiLabelBinarizer method to convert labels into vectors with 1s and 0s. 
+        Example: Drama. Action would get converted into [1, 0, 0, 1, 0, 0, 0].
         
-
         Returns
         -------
         None.

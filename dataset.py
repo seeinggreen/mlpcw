@@ -4,6 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
     
+MAIN_DATA_DIR = 'data'
+FULL_DATASET_DIR = os.path.join(MAIN_DATA_DIR,'dataset_jsons')
+BALANCED_DATASET_FILE = os.path.join(MAIN_DATA_DIR,'balanced_dataset.json')
+WIKI_DIR = os.path.join(MAIN_DATA_DIR,'wiki_jsons')
+TMDB_DIR = os.path.join(MAIN_DATA_DIR,'tmdb_jsons')
+
 class Dataset:
     
     def __init__(self,balanced=False,load_data=False,exclude_ids=True):
@@ -29,6 +35,15 @@ class Dataset:
             self.load_dataset(exclude_ids)
             
     def get_data(self):
+        """
+        Returns the dataset loaded in memory.
+
+        Returns
+        -------
+        list of dict
+            A list of all films in the selected dataset.
+
+        """
         if self.balanced:
             return self.balanced_data
         else:
@@ -89,13 +104,13 @@ class Dataset:
         if not self.balanced:
             self.data_by_year = {}
             self.all_data = []
-            for file in os.listdir('dataset_jsons'):
+            for file in os.listdir(FULL_DATASET_DIR):
                 year = file[:4]
-                with open(os.path.join('dataset_jsons',file)) as f:
+                with open(os.path.join(FULL_DATASET_DIR,file)) as f:
                     self.data_by_year[year] = json.load(f)
                 self.all_data.extend(self.data_by_year[year])
         else:
-            with open('balanced_dataset.json') as f:
+            with open(BALANCED_DATASET_FILE) as f:
                 self.balanced_data = json.load(f)
           
         #Optionally remove the IDs from each film entry
@@ -129,11 +144,11 @@ class Dataset:
 
         """
         if self.balanced:
-            with open('balanced_dataset.json','w') as file:
+            with open(BALANCED_DATASET_FILE,'w') as file:
                 json.dump(self.balanced_data,file)
         else:
             for year in self.data_by_year:
-                with open(f'dataset_jsons/{year}.json','w') as file:
+                with open(os.path.join(FULL_DATASET_DIR,f'{year}.json'),'w') as file:
                     json.dump(self.data_by_year[year],file)
     
     def build_dataset(self):
@@ -151,8 +166,8 @@ class Dataset:
         self.no_id_by_year = {}
         
         self.wiki_data = {}
-        for file in os.listdir('wiki_jsons'):
-            with open(os.path.join('wiki_jsons',file)) as f:
+        for file in os.listdir(WIKI_DIR):
+            with open(os.path.join(WIKI_DIR,file)) as f:
                 data = json.load(f)
             for page in data:
                 self.wiki_data[page] = data[page]
@@ -163,8 +178,8 @@ class Dataset:
         #Get the TMDb data
         self.tmdb_data = {}
         self.tmdb_data_by_year = {}
-        for file in os.listdir('tmdb_jsons'):
-            with open(os.path.join('tmdb_jsons',file)) as f:
+        for file in os.listdir(TMDB_DIR):
+            with open(os.path.join('TMDB_DIR',file)) as f:
                 data = json.load(f)
             self.tmdb_data_by_year[year] = data
             year = file[:4]
@@ -384,6 +399,14 @@ class Dataset:
         return fgc
     
     def genre_count_bar_chart(self):
+        """
+        Saves a bar chart of the genres in the selected dataset.
+
+        Returns
+        -------
+        None.
+
+        """
         tbg = self.total_by_genre(fractional=False)
         ftbg = self.total_by_genre(fractional=True)
         tbg = [tbg[g] for g in tbg]
@@ -424,43 +447,62 @@ class Dataset:
         None.
 
         """
+        #Get the total films by genre
         tbg = self.total_by_genre()
         tbg = [(g,tbg[g]) for g in tbg]
+        #Sort by number of films
         tbg.sort(key=lambda x : x[1])
+        #Aim for the same number of films as the least frequent selected genre
         threshold = tbg[-7][1]
+        #Mark excluded genres as 'full' so they aren't included
         full_genres = [t[0] for t in tbg[:-7]]
+        #Select all other genres for inclusion
         genres = [t[0] for t in tbg[-7:]]
         
+        #Select all films without exlcuded genres, tagged with the first selected genre
         subset = [f for f in self.all_data if genres[0] in f['genres'] and not any([g in full_genres for g in f['genres']])]
         fgc = self.count_genres(subset)
         
+        #Use a set to avoid needing to check if a genre is already full
         full_genres = set(full_genres)
     
+        #For the remaining genres...
         for g in genres[1:]:
+            #Select the films without excluded genres that are tagged with the selected genre
             next_subset = [f for f in self.all_data if g in f['genres'] and not any([g in full_genres for g in f['genres']])]
+            #Split into those without the top three genres, without the top 2,
+            #without the top genre and others
             without_top3 = [f for f in next_subset if not any([g in ['Drama','Comedy','Romance'] for g in f['genres']])]
             without_drama_com = [f for f in next_subset if not any([g in ['Drama','Comedy'] for g in f['genres']])]
             without_drama = [f for f in next_subset if not 'Drama' in f['genres']]
             with_drama = [f for f in next_subset if 'Drama' in f['genres']]
+            #Shuffle each sublist
             random.shuffle(without_top3)
             random.shuffle(without_drama_com)
             random.shuffle(with_drama)
             random.shuffle(without_drama)
+            #Recombine, depriortising well-represented genres
             next_subset = without_top3 + without_drama_com + without_drama + with_drama
 
+            #Add the subset to the main list
             for f in next_subset:
+                #Check if the genre has a (now) full genre and skip it if it does
                 if any([g in full_genres for g in f['genres']]):
                     continue
+                #Otherwise, add it to the main list
                 subset.append(f)
+                #Udpdate the counts
                 for g in f['genres']:
                     fgc[g] += 1 / len(f['genres'])
                 
+                #Check all genres to see if any have been filled
                 for g in genres:
                     if fgc[g] > threshold:
                         full_genres.add(g)
+                #Once this genre is full, skip all remaining films in the list
                 if g in full_genres:
                     break
-                
+        #Save the overall list
         self.balanced_data = subset
                 
             

@@ -129,8 +129,12 @@ dmypy.json
 .pyre/
 
 
-movie_ids_02_24_2023.json
+data/movie_ids_02_24_2023.json
 api_key.txt
 tmdbv3api
 result
+confusion_pkls
+result_pkls
+all_results.csv
+figures
 
